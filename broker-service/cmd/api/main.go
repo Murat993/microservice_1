@@ -1,24 +1,22 @@
 package main
 
 import (
+	"broker/cmd/api/routes"
 	"log"
 	"net/http"
 )
 
-const webPort = "8080"
-
-type Config struct {
-}
+const webPort = "80"
 
 func main() {
-	app := Config{}
+	app := routes.Config{}
 
-	log.Printf("Starting broker server on port %s\n", webPort)
+	log.Printf("Starting broker service on port %s\n", webPort)
 
-	//define http server
+	// define http server
 	srv := &http.Server{
 		Addr:    ":" + webPort,
-		Handler: app.routes(),
+		Handler: app.Routes(),
 	}
 
 	// start the server

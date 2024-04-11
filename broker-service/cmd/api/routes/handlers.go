@@ -1,4 +1,4 @@
-package main
+package routes
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ type jsonResponse struct {
 func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
 	payload := jsonResponse{
 		Error:   false,
-		Message: "OK",
+		Message: "Hit the broker",
 	}
 
 	out, err := json.MarshalIndent(payload, "", "\t")

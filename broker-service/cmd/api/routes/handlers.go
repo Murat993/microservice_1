@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 )
 
@@ -42,7 +43,6 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 	switch requestPayload.Action {
 	case "auth":
 		app.Authenticate(w, r, requestPayload.Auth)
-
 	default:
 		app.errorJSON(w, errors.New("unk action"))
 	}
@@ -52,47 +52,48 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request, a AuthPa
 	// create some json we'll send to the auth microservice
 	jsonData, _ := json.MarshalIndent(a, "", "\t")
 	// call the service
-	request, err := http.NewRequest("POST", "http://auth-service:8080/authenticate", bytes.NewBuffer(jsonData))
+	request, err := http.NewRequest("POST", "http://authentication-service/authenticate", bytes.NewBuffer(jsonData))
 	if err != nil {
 		app.errorJSON(w, err)
 		return
 	}
 
 	client := &http.Client{}
-	resp, err := client.Do(request)
+	response, err := client.Do(request)
 	if err != nil {
 		app.errorJSON(w, err)
 		return
 	}
-	defer resp.Body.Close()
+	defer response.Body.Close()
 
 	// make sure we get back the correct status code
-
-	if resp.StatusCode == http.StatusUnauthorized {
-		app.errorJSON(w, errors.New("invalid credentials"), http.StatusUnauthorized)
+	if response.StatusCode == http.StatusUnauthorized {
+		app.errorJSON(w, errors.New("invalid credentials"))
 		return
-	} else if resp.StatusCode != http.StatusAccepted {
-		app.errorJSON(w, errors.New("error calling auth service"))
+	} else if response.StatusCode != http.StatusAccepted {
+		app.errorJSON(w, fmt.Errorf("unexpected status code: %d", response.StatusCode))
 		return
 	}
 
-	// read the response
+	// create a variable we'll read response.Body into
 	var jsonFromService JsonResponse
-	err = json.NewDecoder(resp.Body).Decode(&jsonFromService)
+
+	// decode the json from the auth service
+	err = json.NewDecoder(response.Body).Decode(&jsonFromService)
 	if err != nil {
 		app.errorJSON(w, err)
 		return
 	}
 
 	if jsonFromService.Error {
-		app.errorJSON(w, errors.New(jsonFromService.Message), http.StatusUnauthorized)
+		app.errorJSON(w, err, http.StatusUnauthorized)
 		return
 	}
 
 	var payload JsonResponse
 	payload.Error = false
-	payload.Message = jsonFromService.Message
+	payload.Message = "Authenticated!"
 	payload.Data = jsonFromService.Data
 
-	app.writeJSON(w, http.StatusOK, payload)
+	app.writeJSON(w, http.StatusAccepted, payload)
 }

@@ -5,6 +5,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
+	"log-service/cmd/api/routes"
+	"log-service/data"
+	"net/http"
 	"time"
 )
 
@@ -16,10 +19,6 @@ const (
 )
 
 var client *mongo.Client
-
-type Config struct {
-	WebPort string
-}
 
 func main() {
 	// connect to mongo
@@ -38,6 +37,20 @@ func main() {
 			log.Panic(err)
 		}
 	}()
+
+	app := routes.Config{
+		Models: data.New(client),
+	}
+
+	srv := &http.Server{
+		Addr:    ":" + webPort,
+		Handler: app.Routes(),
+	}
+
+	err = srv.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func connectToMongo() (*mongo.Client, error) {

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	webPort  = "8080"
+	webPort  = "80"
 	prcPort  = "5001"
 	mongoUrl = "mongodb://mongo:27017"
 	gRPCPort = "50051"
@@ -21,6 +21,7 @@ const (
 var client *mongo.Client
 
 func main() {
+	log.Println("Starting the application")
 	// connect to mongo
 	mongoClient, err := connectToMongo()
 	if err != nil {

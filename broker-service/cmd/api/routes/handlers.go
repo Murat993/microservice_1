@@ -108,7 +108,8 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request, a AuthPa
 
 func (app *Config) LogItem(w http.ResponseWriter, r *http.Request, logEntry LogPayload) {
 	jsonData, _ := json.MarshalIndent(logEntry, "", "\t")
-	logServiceURL := "http://log-service/log"
+
+	logServiceURL := "http://logger-service/log"
 
 	request, err := http.NewRequest("POST", logServiceURL, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -119,22 +120,22 @@ func (app *Config) LogItem(w http.ResponseWriter, r *http.Request, logEntry LogP
 	request.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
+
 	response, err := client.Do(request)
 	if err != nil {
 		app.errorJSON(w, err)
 		return
 	}
-
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusAccepted {
-		app.errorJSON(w, fmt.Errorf("unexpected status code: %d", response.StatusCode))
+		app.errorJSON(w, err)
 		return
 	}
 
 	var payload JsonResponse
 	payload.Error = false
-	payload.Message = "Logged!"
+	payload.Message = "logged"
 
 	app.writeJSON(w, http.StatusAccepted, payload)
 }

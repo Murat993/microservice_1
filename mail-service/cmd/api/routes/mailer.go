@@ -6,6 +6,7 @@ import (
 	mail "github.com/xhit/go-simple-mail/v2"
 	"html/template"
 	"log"
+	"time"
 )
 
 type Mail struct {
@@ -53,6 +54,7 @@ func (m *Mail) SendSMTPMessage(msg Message) error {
 	plainMessage, err := m.buildPlainTextMessage(msg)
 	if err != nil {
 		log.Println("Error building plain text message")
+		log.Println(err)
 		return err
 	}
 
@@ -63,8 +65,8 @@ func (m *Mail) SendSMTPMessage(msg Message) error {
 	server.Password = m.Password
 	server.Encryption = m.getEncryption(m.Encryption)
 	server.KeepAlive = false
-	server.ConnectTimeout = 10
-	server.SendTimeout = 10
+	server.ConnectTimeout = 10 * time.Second
+	server.SendTimeout = 10 * time.Second
 
 	smtpClient, err := server.Connect()
 	if err != nil {
@@ -96,22 +98,20 @@ func (m *Mail) SendSMTPMessage(msg Message) error {
 }
 
 func (m *Mail) buildHTMLMessage(msg Message) (string, error) {
-	templateToRender := "./template/mail.html.gohtml"
+	templateToRender := "./templates/mail.html.gohtml"
 
 	t, err := template.New("email-html").ParseFiles(templateToRender)
-
 	if err != nil {
 		return "", err
 	}
 
 	var tpl bytes.Buffer
-	if err = t.Execute(&tpl, msg.DataMap); err != nil {
+	if err = t.ExecuteTemplate(&tpl, "body", msg.DataMap); err != nil {
 		return "", err
 	}
 
 	formattedMessage := tpl.String()
 	formattedMessage, err = m.inlineCSS(formattedMessage)
-
 	if err != nil {
 		return "", err
 	}
@@ -120,16 +120,15 @@ func (m *Mail) buildHTMLMessage(msg Message) (string, error) {
 }
 
 func (m *Mail) buildPlainTextMessage(msg Message) (string, error) {
-	templateToRender := "./template/mail.plain.gohtml"
+	templateToRender := "./templates/mail.plain.gohtml"
 
 	t, err := template.New("email-plain").ParseFiles(templateToRender)
-
 	if err != nil {
 		return "", err
 	}
 
 	var tpl bytes.Buffer
-	if err = t.Execute(&tpl, msg.DataMap); err != nil {
+	if err = t.ExecuteTemplate(&tpl, "body", msg.DataMap); err != nil {
 		return "", err
 	}
 

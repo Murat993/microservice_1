@@ -12,6 +12,14 @@ type RequestPayload struct {
 	Action string      `json:"action"`
 	Auth   AuthPayload `json:"auth,omitempty"`
 	Log    LogPayload  `json:"log,omitempty"`
+	Mail   MailPayload `json:"mail,omitempty"`
+}
+
+type MailPayload struct {
+	From    string `json:"from"`
+	To      string `json:"to"`
+	Subject string `json:"subject"`
+	Message string `json:"message"`
 }
 
 type AuthPayload struct {
@@ -51,6 +59,8 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 		app.Authenticate(w, r, requestPayload.Auth)
 	case "log":
 		app.LogItem(w, r, requestPayload.Log)
+	case "mail":
+		app.SendMail(w, r, requestPayload.Mail)
 	default:
 		app.errorJSON(w, errors.New("unk action"))
 	}
@@ -136,6 +146,40 @@ func (app *Config) LogItem(w http.ResponseWriter, r *http.Request, logEntry LogP
 	var payload JsonResponse
 	payload.Error = false
 	payload.Message = "logged"
+
+	app.writeJSON(w, http.StatusAccepted, payload)
+}
+
+func (app *Config) SendMail(w http.ResponseWriter, r *http.Request, mail MailPayload) {
+	jsonData, _ := json.MarshalIndent(mail, "", "\t")
+
+	mailServiceURL := "http://mailer-service/send"
+
+	request, err := http.NewRequest("POST", mailServiceURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+
+	response, err := client.Do(request)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusAccepted {
+		app.errorJSON(w, err)
+		return
+	}
+
+	var payload JsonResponse
+	payload.Error = false
+	payload.Message = "Message sent to " + mail.To
 
 	app.writeJSON(w, http.StatusAccepted, payload)
 }

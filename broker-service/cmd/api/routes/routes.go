@@ -1,6 +1,7 @@
 package routes
 
 import (
+	amqp "github.com/rabbitmq/amqp091-go"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -8,7 +9,9 @@ import (
 	"github.com/go-chi/cors"
 )
 
-type Config struct{}
+type Config struct {
+	Rabbit *amqp.Connection
+}
 
 func (app *Config) Routes() http.Handler {
 	mux := chi.NewRouter()

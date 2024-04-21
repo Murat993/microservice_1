@@ -8,14 +8,13 @@ import (
 	"log-service/cmd/api/routes"
 	"log-service/data"
 	"net/http"
+	"net/rpc"
 	"time"
 )
 
 const (
 	webPort  = "80"
-	prcPort  = "5001"
 	mongoUrl = "mongodb://mongo:27017"
-	gRPCPort = "50051"
 )
 
 var client *mongo.Client
@@ -42,6 +41,10 @@ func main() {
 	app := routes.Config{
 		Models: data.New(client),
 	}
+
+	//Register RPC server
+	err = rpc.Register(new(RPCServer))
+	go app.RPCListen()
 
 	srv := &http.Server{
 		Addr:    ":" + webPort,

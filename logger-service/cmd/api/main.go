@@ -45,6 +45,7 @@ func main() {
 	//Register RPC server
 	err = rpc.Register(new(RPCServer))
 	go app.RPCListen()
+	go app.GRPCListen()
 
 	srv := &http.Server{
 		Addr:    ":" + webPort,

@@ -29,6 +29,7 @@ func (app *Config) Routes() http.Handler {
 	mux.Use(middleware.Heartbeat("/ping"))
 
 	mux.Post("/", app.Broker)
+	mux.Post("/log-grpc", app.LogViaGRPC)
 	mux.Post("/handle", app.HandleSubmission)
 
 	return mux
